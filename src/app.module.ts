@@ -3,15 +3,14 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthModule }       from './auth/auth.module';
-import { ProjectsModule }   from './projects/proyects.module';
+import { SeedModule }       from './seed/seed.module';
 import { MailModule }       from './mail/mail.module';
 import { RecipientsModule } from './recipients/recipients.module';
 import { TemplatesModule }  from './templates/templates.module';
 import { CampaignsModule }  from './campaigns/campaigns.module';
 import { DashboardModule }  from './dashboard/dashboard.module';
-import { WebhooksModule }  from './webhooks/webhooks.module';
-import { TrackingModule }  from './tracking/tracking.module';
-
+import { WebhooksModule }   from './webhooks/webhooks.module';
+import { TrackingModule }   from './tracking/tracking.module';
 
 @Module({
   imports: [
@@ -32,10 +31,12 @@ import { TrackingModule }  from './tracking/tracking.module';
       autoLoadEntities: true,
       synchronize:      true,
     }),
-    // módulos existentes — no se tocan
+
+    // Autenticación
     AuthModule,
-    ProjectsModule,
-    // MailMasivo — sin @Auth(), sin filtro por usuario
+    SeedModule,
+
+    // Envío de email masivo con Resend
     MailModule,
     RecipientsModule,
     TemplatesModule,

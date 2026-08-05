@@ -1,9 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
-import { ValidRoles } from '../auth/interfaces';
-import { Auth } from '../auth/decorators';
-
 import { SeedService } from './seed.service';
 
 @ApiTags('Seed')
@@ -12,15 +9,13 @@ export class SeedController {
   constructor(private readonly seedService: SeedService) {}
 
   @Get()
-  // @Auth( ValidRoles.admin )
   @ApiOperation({
-    summary: 'Destruye y crea una nueva base de datos',
+    summary: 'Recrea usuarios de prueba',
     description:
-      'Destruye y crea la base de datos de PROJECTos y usuarios, esto invalida también tokens existentes y usuarios creados.',
+      'Borra todos los usuarios y crea un admin y un usuario de prueba. Útil solo en desarrollo, NO ejecutar en producción.',
   })
   @ApiResponse({ status: 200, description: 'Seed ejecutado con éxito' })
   executeSeed() {
     return this.seedService.runSeed();
   }
 }
-

@@ -1,7 +1,5 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
-
-const VALID_DOMAINS = ['elavellano.cl', 'globalterrenos.cl'];
+import { IsEmail, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
 
 export class CreateCampaignDto {
   @ApiProperty({ example: 'Newsletter Junio' })
@@ -24,21 +22,20 @@ export class CreateCampaignDto {
   @IsUUID()
   templateId?: string;
 
-  @ApiProperty({ example: 'El Avellano', required: false })
+  @ApiProperty({ example: 'Mi Empresa', required: false, description: 'Nombre visible del remitente' })
   @IsOptional()
   @IsString()
   @MinLength(1)
   fromName?: string;
 
   @ApiProperty({
-    example: 'elavellano.cl',
-    enum: VALID_DOMAINS,
+    example: 'noreply@tudominio.com',
     required: false,
+    description: 'Email remitente. Si no se especifica, se usa MAIL_FROM del .env',
   })
   @IsOptional()
-  @IsString()
-  @IsIn(VALID_DOMAINS, { message: `fromDomain debe ser uno de: ${VALID_DOMAINS.join(', ')}` })
-  fromDomain?: string;
+  @IsEmail()
+  fromEmail?: string;
 }
 
 export class UpdateCampaignDto extends PartialType(CreateCampaignDto) {}

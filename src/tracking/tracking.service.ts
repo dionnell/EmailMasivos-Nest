@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SendLog } from '../recipients/entities/send-log.entity';
 import { Campaign } from '../campaigns/entities/campaign.entity';
+import { EventsGateway } from '../events/events.gateway';
 
 // GIF transparente 1x1 en base64 — se devuelve al cliente de correo
 const TRACKING_PIXEL = Buffer.from(
@@ -20,6 +21,8 @@ export class TrackingService {
 
     @InjectRepository(Campaign)
     private readonly campaignRepository: Repository<Campaign>,
+
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   getTrackingPixel(): Buffer {
@@ -56,6 +59,15 @@ export class TrackingService {
 
       await this.sendLogRepository.save(log);
       this.logger.debug(`Apertura registrada para log ${sendLogId} (total: ${log.openCount})`);
+
+      // Emitir evento en vivo para un dashboard conectado por WebSocket
+      this.eventsGateway.emitEmailOpened({
+        campaignId: log.campaign?.id ?? null,
+        sendLogId:  log.id,
+        email:      log.email,
+        openCount:  log.openCount,
+        firstOpen:  isFirstOpen,
+      });
     } catch (err) {
       // No lanzar error — el tracking nunca debe romper la experiencia del usuario
       this.logger.error(`Error registrando apertura: ${err.message}`);

@@ -1,12 +1,3 @@
-import fetch, { Headers, Request, Response } from 'node-fetch';
-
-if (!globalThis.fetch) {
-  (globalThis as any).fetch   = fetch;
-  (globalThis as any).Headers = Headers;
-  (globalThis as any).Request = Request;
-  (globalThis as any).Response = Response;
-}
-
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -34,8 +25,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Teslo RESTFul API')
-    .setDescription('Teslo shop endpoints')
+    .setTitle('MailMasivo API')
+    .setDescription('API de autenticación y envío de email masivo con Resend')
     .setVersion('1.0')
     .build();
   const document = SwaggerModule.createDocument(app, config);

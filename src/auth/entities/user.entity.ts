@@ -1,5 +1,4 @@
-import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
-import { Project } from '../../projects/entities';
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 
 @Entity('users')
@@ -40,12 +39,6 @@ export class User {
 
     @CreateDateColumn()
     createdAt: Date;
-
-    @OneToMany(
-        () => Project,
-        ( project ) => project.user
-    )
-    project: Project[];
 
     @BeforeInsert()
     checkFieldsBeforeInsert() {

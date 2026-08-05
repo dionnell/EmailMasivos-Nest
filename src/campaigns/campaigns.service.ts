@@ -15,6 +15,7 @@ import { Campaign, CampaignStatus } from './entities/campaign.entity';
 import { Template } from '../templates/entities/template.entity';
 import { CreateCampaignDto, UpdateCampaignDto } from './dto/campaign.dto';
 import { SendCampaignDto } from '../recipients/dto/recipient.dto';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class CampaignsService {
@@ -33,6 +34,7 @@ export class CampaignsService {
     private readonly mailService: MailService,
     private readonly recipientsService: RecipientsService,
     private readonly configService: ConfigService,
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async create(dto: CreateCampaignDto): Promise<Campaign> {
@@ -128,26 +130,23 @@ export class CampaignsService {
       await this.sendLogRepository.save(log);
 
       // Inyectar pixel de tracking en el HTML
-      const baseUrl      = this.configService.get<string>('API_BASE_URL') ?? '';
+      const baseUrl      = this.configService.get<string>('API_URL') ?? '';
       const trackingPixel = baseUrl
         ? `<img src="${baseUrl}/api/track/open/${log.id}" width="1" height="1" style="display:none" />`
         : '';
       const htmlWithPixel = html + trackingPixel;
 
-      // Construir el remitente según el dominio elegido
-      // Formato: "Nombre <alias@dominio.cl>"
-      const fromName   = campaign.fromName   ?? 'MailMasivo';
-      const fromDomain = campaign.fromDomain ?? 'elavellano.cl';
-      const fromAlias  = fromName.toLowerCase().replace(/\s+/g, '');
-      const fromEmail  = `${fromAlias}@${fromDomain}`;
-      const from       = `${fromName} <${fromEmail}>`;
+      // Remitente: si la campaña define fromName/fromEmail se arma "Nombre <email>",
+      // si no, el servicio de mail usa MAIL_FROM del .env por defecto.
+      const from = campaign.fromEmail
+        ? `${campaign.fromName ?? 'MailMasivo'} <${campaign.fromEmail}>`
+        : undefined;
 
       const result = await this.mailService.sendEmail({
         to:          recipient.email,
         subject,
         html:        htmlWithPixel,
         from,
-        domain:      fromDomain,
         attachments: dto.attachments,
       });
 
@@ -159,6 +158,14 @@ export class CampaignsService {
 
       result.error ? failedCount++ : sentCount++;
 
+      // Emitir progreso en vivo para un dashboard conectado por WebSocket
+      this.eventsGateway.emitCampaignProgress({
+        campaignId:      campaign.id,
+        sentCount,
+        failedCount,
+        totalRecipients: recipients.length,
+      });
+
       // delay 600ms para respetar rate limit de Resend
       await new Promise((r) => setTimeout(r, 600));
     }
@@ -167,7 +174,16 @@ export class CampaignsService {
     campaign.sentCount   = sentCount;
     campaign.failedCount = failedCount;
     campaign.sentAt      = new Date();
-    return this.campaignRepository.save(campaign);
+    const saved = await this.campaignRepository.save(campaign);
+
+    this.eventsGateway.emitCampaignDone({
+      campaignId:      campaign.id,
+      sentCount,
+      failedCount,
+      totalRecipients: recipients.length,
+    });
+
+    return saved;
   }
 
   async getLogs(id: string): Promise<SendLog[]> {

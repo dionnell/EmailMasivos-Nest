@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { MailModule } from '../mail/mail.module';
 import { RecipientsModule } from '../recipients/recipients.module';
+import { EventsModule } from '../events/events.module';
 import { Campaign } from './entities/campaign.entity';
 import { SendLog } from '../recipients/entities/send-log.entity';
 import { Template } from '../templates/entities/template.entity';
@@ -15,6 +16,7 @@ import { CampaignsController } from './campaigns.controller';
     TypeOrmModule.forFeature([Campaign, SendLog, Template]),
     MailModule,
     RecipientsModule,
+    EventsModule,
   ],
   controllers: [CampaignsController],
   providers:   [CampaignsService],

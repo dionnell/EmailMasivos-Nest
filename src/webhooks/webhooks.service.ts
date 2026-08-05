@@ -5,6 +5,7 @@ import { SendLog, SendStatus } from '../recipients/entities/send-log.entity';
 import { Recipient } from '../recipients/entities/recipient.entity';
 import { Campaign } from '../campaigns/entities/campaign.entity';
 import { ResendWebhookPayload } from './resend-webhook.types';
+import { EventsGateway } from '../events/events.gateway';
 
 @Injectable()
 export class WebhooksService {
@@ -17,6 +18,8 @@ export class WebhooksService {
     private readonly recipientRepository: Repository<Recipient>,
     @InjectRepository(Campaign)
     private readonly campaignRepository: Repository<Campaign>,
+
+    private readonly eventsGateway: EventsGateway,
   ) {}
 
   async handleResendEvent(payload: ResendWebhookPayload): Promise<void> {
@@ -57,6 +60,12 @@ export class WebhooksService {
       this.logger.warn(`Bounce (${bounce?.type}) para ${email} — log actualizado`);
     }
 
+    this.eventsGateway.emitEmailBounced({
+      email,
+      type: isHardBounce ? 'hard' : 'soft',
+      campaignId: log?.campaign?.id,
+    });
+
     if (isHardBounce) {
       const recipient = await this.recipientRepository.findOne({ where: { email } });
       if (recipient) {
@@ -75,6 +84,7 @@ export class WebhooksService {
       await this.recipientRepository.save(recipient);
       this.logger.warn(`Destinatario ${email} marcado como inactivo (spam complaint)`);
     }
+    this.eventsGateway.emitEmailComplained({ email });
   }
 
   private async handleDelivered(payload: ResendWebhookPayload): Promise<void> {

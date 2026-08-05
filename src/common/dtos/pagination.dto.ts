@@ -6,74 +6,26 @@ import { IsOptional, IsPositive, Min } from 'class-validator';
 export class PaginationDto {
   @ApiProperty({
     default: 10,
-    description: 'How many rows do you need',
+    description: 'Cuántas filas se necesitan',
   })
   @IsOptional()
   @IsPositive()
-  @Type(() => Number) // enableImplicitConversions: true
+  @Type(() => Number)
   limit?: number;
 
   @ApiProperty({
     default: 0,
-    description: 'How many rows do you want to skip',
+    description: 'Cuántas filas se deben saltar',
   })
   @IsOptional()
   @Min(0)
-  @Type(() => Number) // enableImplicitConversions: true
+  @Type(() => Number)
   offset?: number;
 
   @ApiProperty({
-    default: '',
-    description: 'Filter results by gender',
-    enum: ['men', 'women', 'unisex', 'kid', ''],
-    example: 'men',
-  })
-  @IsOptional()
-  gender?: 'men' | 'women' | 'unisex' | 'kid' | '';
-
-  @ApiProperty({
-    default: '',
-    description: 'Filter results by status',
-    enum: ['approved', 'pending', 'failed', 'cancelled'],
-    example: 'approved',
-  })
-  @IsOptional()
-  status?: 'approved' | 'pending' | 'failed' | 'cancelled' | '';
-
-  @ApiProperty({
     required: false,
-    description: 'Precio mínimo para filtrar resultados',
-    example: 0,
-  })
-  @IsOptional()
-  @Min(0)
-  @Type(() => Number)
-  minPrice?: number;
-
-  @ApiProperty({
-    required: false,
-    description: 'Precio máximo para filtrar resultados',
-    example: 50,
-  })
-  @IsOptional()
-  @Min(0)
-  @Type(() => Number)
-  maxPrice?: number;
-
-  @ApiProperty({
-    required: false,
-    description: 'Filtrar resultados por tallas. Ejemplo: "XS,S,M"',
-    isArray: false,
-    example: 'XS,S,M',
-  })
-  @IsOptional()
-  @Type(() => String)
-  sizes?: string;
-
-  @ApiProperty({
-    required: false,
-    description: 'Query para filtrar resultados',
-    example: 'query',
+    description: 'Query para filtrar resultados (nombre o email)',
+    example: 'juan',
   })
   @IsOptional()
   @Type(() => String)

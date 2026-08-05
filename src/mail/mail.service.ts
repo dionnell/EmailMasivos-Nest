@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
@@ -12,8 +12,7 @@ export interface SendEmailOptions {
   to: string;
   subject: string;
   html: string;
-  from: string;         // "Nombre <email@dominio.cl>" — requerido, ya viene construido
-  domain: string;       // "elavellano.cl" | "globalterrenos.cl" — para elegir API key
+  from?: string; // "Nombre <email@dominio.com>" — si no se envía, se usa MAIL_FROM
   attachments?: Attachment[];
 }
 
@@ -22,54 +21,35 @@ interface SendEmailResult {
   error?: string;
 }
 
-// Configuración de cada dominio
-interface DomainConfig {
-  apiKey: string;
-  client: Resend;
-}
-
 @Injectable()
 export class MailService {
   private readonly logger = new Logger('MailService');
-  private readonly domains: Map<string, DomainConfig> = new Map();
+  private readonly client: Resend | null;
+  private readonly defaultFrom: string;
 
   constructor(private readonly configService: ConfigService) {
-    // Registrar dominios disponibles
-    this.registerDomain(
-      'elavellano.cl',
-      this.configService.get<string>('RESEND_API_KEY_ELAVELLANO'),
-    );
-    this.registerDomain(
-      'globalterrenos.cl',
-      this.configService.get<string>('RESEND_API_KEY_GLOBALTERRENOS'),
-    );
-  }
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    this.defaultFrom = this.configService.get<string>('MAIL_FROM');
 
-  private registerDomain(domain: string, apiKey: string | undefined): void {
     if (!apiKey) {
-      this.logger.warn(`No se encontró API key para el dominio ${domain} — se omitirá`);
+      this.logger.warn('RESEND_API_KEY no está configurada — el envío de emails fallará');
+      this.client = null;
       return;
     }
-    this.domains.set(domain, { apiKey, client: new Resend(apiKey) });
-    this.logger.log(`Dominio registrado: ${domain}`);
-  }
 
-  getAvailableDomains(): string[] {
-    return Array.from(this.domains.keys());
+    this.client = new Resend(apiKey);
   }
 
   async sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
-    const config = this.domains.get(options.domain);
-
-    if (!config) {
-      const msg = `Dominio "${options.domain}" no está configurado`;
+    if (!this.client) {
+      const msg = 'RESEND_API_KEY no está configurada';
       this.logger.error(msg);
       return { error: msg };
     }
 
     try {
-      const { data, error } = await config.client.emails.send({
-        from:        options.from,
+      const { data, error } = await this.client.emails.send({
+        from:        options.from ?? this.defaultFrom,
         to:          options.to,
         subject:     options.subject,
         html:        options.html,
@@ -81,7 +61,7 @@ export class MailService {
       });
 
       if (error) {
-        this.logger.warn(`Error Resend [${options.domain}] para ${options.to}: ${error.message}`);
+        this.logger.warn(`Error Resend para ${options.to}: ${error.message}`);
         return { error: error.message };
       }
 
