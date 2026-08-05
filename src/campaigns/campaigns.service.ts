@@ -130,9 +130,10 @@ export class CampaignsService {
       await this.sendLogRepository.save(log);
 
       // Inyectar pixel de tracking en el HTML
+      // API_URL ya incluye el prefijo /api (ej: https://tu-api.onrender.com/api)
       const baseUrl      = this.configService.get<string>('API_URL') ?? '';
       const trackingPixel = baseUrl
-        ? `<img src="${baseUrl}/api/track/open/${log.id}" width="1" height="1" style="display:none" />`
+        ? `<img src="${baseUrl}/track/open/${log.id}" width="1" height="1" style="display:none" />`
         : '';
       const htmlWithPixel = html + trackingPixel;
 
