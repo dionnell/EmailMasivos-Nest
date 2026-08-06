@@ -29,7 +29,12 @@ export class MailService {
 
   constructor(private readonly configService: ConfigService) {
     const apiKey = this.configService.get<string>('RESEND_API_KEY');
-    this.defaultFrom = this.configService.get<string>('MAIL_FROM');
+
+    // Si no hay MAIL_FROM configurado, se usa el dominio de pruebas de Resend
+    // (@resend.dev) — solo entrega a la cuenta dueña del RESEND_API_KEY, útil
+    // mientras no se verifica un dominio propio de la empresa.
+    this.defaultFrom =
+      this.configService.get<string>('MAIL_FROM') ?? 'MailMasivo <onboarding@resend.dev>';
 
     if (!apiKey) {
       this.logger.warn('RESEND_API_KEY no está configurada — el envío de emails fallará');
@@ -38,6 +43,11 @@ export class MailService {
     }
 
     this.client = new Resend(apiKey);
+  }
+
+  /** Remitente por defecto ya resuelto (MAIL_FROM o el fallback @resend.dev) */
+  getDefaultFrom(): string {
+    return this.defaultFrom;
   }
 
   async sendEmail(options: SendEmailOptions): Promise<SendEmailResult> {
@@ -66,9 +76,10 @@ export class MailService {
       }
 
       return { id: data.id };
-    } catch (err) {
+    } catch (err: unknown) {
       this.logger.error(`Excepción enviando a ${options.to}`, err);
-      return { error: err.message ?? 'Error desconocido' };
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      return { error: errorMessage || 'Error desconocido' };
     }
   }
 
