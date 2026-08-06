@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { TemplatesService } from './templates.service';
 import { CreateTemplateDto, UpdateTemplateDto } from './dto/template.dto';
+import { TemplateType } from './entities/template.entity';
 
 @ApiTags('Templates')
 @Controller('templates')
@@ -9,15 +10,16 @@ export class TemplatesController {
   constructor(private readonly templatesService: TemplatesService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Crear una plantilla' })
+  @ApiOperation({ summary: 'Crear una plantilla o firma' })
   create(@Body() dto: CreateTemplateDto) {
     return this.templatesService.create(dto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todas las plantillas' })
-  findAll() {
-    return this.templatesService.findAll();
+  @ApiOperation({ summary: 'Listar plantillas (opcionalmente filtrando por tipo)' })
+  @ApiQuery({ name: 'type', enum: TemplateType, required: false })
+  findAll(@Query('type') type?: TemplateType) {
+    return this.templatesService.findAll(type);
   }
 
   @Get(':id')

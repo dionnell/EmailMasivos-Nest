@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Template } from './entities/template.entity';
+import { Template, TemplateType } from './entities/template.entity';
 import { CreateTemplateDto, UpdateTemplateDto } from './dto/template.dto';
 
 @Injectable()
@@ -16,8 +16,11 @@ export class TemplatesService {
     return this.templateRepository.save(template);
   }
 
-  async findAll(): Promise<Template[]> {
-    return this.templateRepository.find({ order: { createdAt: 'DESC' } });
+  async findAll(type?: TemplateType): Promise<Template[]> {
+    return this.templateRepository.find({
+      where: type ? { type } : {},
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findOne(id: string): Promise<Template> {
